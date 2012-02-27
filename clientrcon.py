@@ -19,7 +19,7 @@ class ClientRconFactory(ReconnectingClientFactory, FBRconFactory):
     rm = None
     instance = None
     
-    def __init__(self, isServer = False, params = {}, rm = None):
+    def __init__(self, isServer = False, params = {}, rm = None): # TODO: params is shared between objects. That can't be good.
         self.rm = rm
         FBRconFactory.__init__(self, isServer, params)
     
@@ -30,28 +30,28 @@ class ClientRconFactory(ReconnectingClientFactory, FBRconFactory):
         return p
         
 levelhash = {
-    'MP_001': 'Grand Bazaar',
-    'MP_003': 'Teheran Highway',
-    'MP_007': 'Caspian Border',
-    'MP_011': 'Seine Crossing',
-    'MP_012': 'Operation Firestorm',
-    'MP_013': 'Damavand Peak',
-    'MP_017': 'Noshahar Canals',
-    'MP_018': 'Kharg Island',
+    'MP_001':    'Grand Bazaar',
+    'MP_003':    'Teheran Highway',
+    'MP_007':    'Caspian Border',
+    'MP_011':    'Seine Crossing',
+    'MP_012':    'Operation Firestorm',
+    'MP_013':    'Damavand Peak',
+    'MP_017':    'Noshahar Canals',
+    'MP_018':    'Kharg Island',
     'MP_Subway': 'Operation Metro',
-    'XP1_001': 'Strike at Karkand',
-    'XP1_002': 'Gulf of Oman',
-    'XP1_003': 'Sharqi Peninsula',
-    'XP1_004': 'Wake Island',
+    'XP1_001':   'Strike at Karkand',
+    'XP1_002':   'Gulf of Oman',
+    'XP1_003':   'Sharqi Peninsula',
+    'XP1_004':   'Wake Island',
 }
 
 modehash = {
-    'ConquestLarge0': 'Conquest',
-    'ConquestSmall0': 'Consolequest',
-    'RushLarge0':     'Rush',
-    'SquadRush0':     'Squad Rush',
-    'SquadDeathMatch0': 'Squad Deathmatch',
-    'TeamDeathMatch0':  'Team Deathmatch',
+    'ConquestLarge0':    'Conquest',
+    'ConquestSmall0':    'Consolequest',
+    'RushLarge0':        'Rush',
+    'SquadRush0':        'Squad Rush',
+    'SquadDeathMatch0':  'Squad Deathmatch',
+    'TeamDeathMatch0':   'Team Deathmatch',
 }
 
 class ClientRconProtocol(FBRconProtocol):
@@ -60,28 +60,28 @@ class ClientRconProtocol(FBRconProtocol):
     def __init__(self):
         FBRconProtocol.__init__(self)
         self.handlers = {
-            "player.onJoin":          self.player_onJoin,
-            "player.onLeave":         self.player_onLeave,
-            "player.onAuthenticated": self.player_onAuthenticated,
-            "player.onChat":          self.player_onChat,
-            "player.onTeamChange":    self.player_onTeamChange,
-            "player.onSquadChange":   self.player_onSquadChange,
-            "player.onKill":          self.nullop, # temporary
-            "server.onLevelLoaded":   self.server_onLevelLoaded,
-            "punkBuster.onMessage":   self.nullop,
-            "player.onSpawn":         self.nullop,
-            "version":                self.nullop,
-            "serverInfo":             self.nullop,
-            "listPlayers":            self.nullop,
-            "server.onRoundOver":     self.nullop,
-            "server.onRoundOverPlayers": self.nullop,
+            "player.onJoin":                self.player_onJoin,
+            "player.onLeave":               self.player_onLeave,
+            "player.onAuthenticated":       self.player_onAuthenticated,
+            "player.onChat":                self.player_onChat,
+            "player.onTeamChange":          self.player_onTeamChange,
+            "player.onSquadChange":         self.player_onSquadChange,
+            "player.onKill":                self.nullop, # temporary
+            "server.onLevelLoaded":         self.server_onLevelLoaded,
+            "punkBuster.onMessage":         self.nullop,
+            "player.onSpawn":               self.nullop,
+            "version":                      self.nullop,
+            "serverInfo":                   self.nullop,
+            "listPlayers":                  self.nullop,
+            "server.onRoundOver":           self.nullop,
+            "server.onRoundOverPlayers":    self.nullop,
             "server.onRoundOverTeamScores": self.nullop,
         }
         self.seq = 1
         self.callbacks = {}
         self.server = Server(self)
     
-    ### "OK" "Kentucky Fried Server" "64" "64" "ConquestLarge0" "XP1_001" "0" "2" "2" "60.563736" "109.1357" "0" "" "true" "true" "false" "6972" "781" "" "" "" "NAm" "iad" "US"
+    # "OK" "Kentucky Fried Server" "64" "64" "ConquestLarge0" "XP1_001" "0" "2" "2" "60.563736" "109.1357" "0" "" "true" "true" "false" "6972" "781" "" "" "" "NAm" "iad" "US"
     @defer.inlineCallbacks
     def serverInfo(self):
         sinfo = yield self.sendRequest(["serverInfo"])
@@ -99,7 +99,7 @@ class ClientRconProtocol(FBRconProtocol):
     def nullop(self, packet):
         pass
 
-    ### IsFromClient,  Response,  Sequence: 2  Words: "OK" "7" "name" "guid" "teamId" "squadId" "kills" "deaths" "score" "0" 
+    # IsFromClient,  Response,  Sequence: 2  Words: "OK" "7" "name" "guid" "teamId" "squadId" "kills" "deaths" "score" "0" 
     @defer.inlineCallbacks
     def admin_listPlayers(self):
         players = yield self.sendRequest(["admin.listPlayers", "all"])
@@ -147,7 +147,7 @@ class ClientRconProtocol(FBRconProtocol):
     def admin_say(self, message, players):
         retval = yield self.sendRequest(["admin.say", message, players])
     
-    ### Unhandled event: IsFromServer, Request, Sequence: 132, Words: "server.onLevelLoaded" "MP_007" "ConquestLarge0" "0" "2"
+    # Unhandled event: IsFromServer, Request, Sequence: 132, Words: "server.onLevelLoaded" "MP_007" "ConquestLarge0" "0" "2"
     def server_onLevelLoaded(self, packet): 
         params = {
         'level':    levelhash[packet.words[1]],
@@ -207,8 +207,8 @@ class ClientRconProtocol(FBRconProtocol):
     
     def sendRequest(self, strings):
         """sends something to the other end, returns a Deferred"""
-        ### TODO: this needs to add items to a cache so we can fire the deferred later
-        ###       we should probably also track command rtt
+        # TODO: this needs to add items to a cache so we can fire the deferred later
+        #       we should probably also track command rtt
         cb = Deferred()
         seq = self.peekSeq()
         self.callbacks[seq] = cb
@@ -237,8 +237,8 @@ class ClientRconProtocol(FBRconProtocol):
             handler = self.handlers[command]
             try:
                 handler(packet)
-            except Exception, E:
-                print "Caught Exception in gotRequest:",E
+            except Exception, e:
+                print "Caught Exception in gotRequest:", e
         else:
-            print "Unhandled event:",packet
+            print "Unhandled event:", packet
         self.sendResponse(packet)

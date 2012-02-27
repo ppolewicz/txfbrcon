@@ -27,9 +27,11 @@ class FBRconPacket:
            returns True if we successfully deser'd a packet
         """
         buflen = len(data)
-        if buflen < 12: return False         ### full header present?
-        pktlen = self.DecodeInt32(data[4:8]) ### pull out the len
-        if buflen < pktlen: return False     ### do we have the full packet buffered?
+        if buflen < 12: # is full header present?
+            return False
+        pktlen = self.DecodeInt32(data[4:8])
+        if buflen < pktlen: # do we have the full packet buffered?
+            return False
         self.len = pktlen
         [self.isFromServer, self.isResponse, self.sequence, self.words] = self.DecodePacket(data)
         return True

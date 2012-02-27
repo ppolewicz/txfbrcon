@@ -48,7 +48,7 @@ class FBRconProtocol(Protocol):
             self.__buffer = self.__buffer[pkt.len:]
             pkt = FBRconPacket()
 
-    ### helper functions to abstract away FBRconPacket
+    # helper functions to abstract away FBRconPacket
     def getSeq(self):
         seq = self.__seq
         self.__seq = (self.__seq + 1) & 0x3fffffff

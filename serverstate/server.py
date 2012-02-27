@@ -31,7 +31,7 @@ class Server:
         if lname in self.players:
             defer.returnValue(self.players[lname])
             return
-        ### player not found, so let's create him
+        # player not found, so let's create him
         pl = yield self.rcon.admin_listOnePlayer(name)
         ph = self.addPlayer(pl['name'], pl['guid'])
         defer.returnValue(ph)
