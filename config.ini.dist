@@ -1,0 +1,6 @@
+[main]
+ip=127.0.0.1
+port=45678
+password=******
+tag=define-this-in-config.ini
+

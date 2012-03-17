@@ -160,7 +160,11 @@ class ClientRconProtocol(FBRconProtocol):
     @defer.inlineCallbacks
     def player_onJoin(self, packet):
         normal = str(packet.words[1]).lower()
-        isgoon = yield self.mongo.bf3names.count({'bf3name': normal})
+
+        # TODO: ?
+        #isgoon = yield self.mongo.bf3names.count({'bf3name': normal})
+        isgoon = 0
+
         self.postMessage("player.onJoin", {'player': packet.words[1], 'guid': packet.words[2], 'isgoon': isgoon != 0})
 
     def player_onAuthenticated(self, packet):
@@ -183,7 +187,7 @@ class ClientRconProtocol(FBRconProtocol):
     @defer.inlineCallbacks
     def connectionMade(self):
         self.params = self.factory.params
-        self.mongo  = self.factory.rm.mongo
+        #self.mongo  = self.factory.rm.mongo
         FBRconProtocol.connectionMade(self)
         ver   = yield self.sendRequest(["version"])
         salt  = yield self.sendRequest(["login.hashed"])
@@ -199,7 +203,10 @@ class ClientRconProtocol(FBRconProtocol):
         self.postMessage("status", "connectionMade")
     
     def postMessage(self, facility, message):
-        self.factory.rm.postMessage("servers.%s.%s" % (self.params["tag"], facility), message)
+        print "postMessage %s: %s" % (facility, message)
+        #TODO: what is this for?
+        #self.factory.rm.postMessage("servers.%s.%s" % (self.params["tag"], facility), message)
+        pass
     
     def connectionLost(self, reason):
         self.postMessage("status", "connectionLost")
