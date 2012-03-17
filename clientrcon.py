@@ -56,6 +56,8 @@ modehash = {
 
 class ClientRconProtocol(FBRconProtocol):
     """a unique instance of this spawns for each rcon connection. i think."""
+    STATUS_OK = 'OK'
+    PLAYER_STRUCTURE_GROUPING_COLUMN = 'name'
     
     def __init__(self):
         FBRconProtocol.__init__(self)
@@ -99,41 +101,44 @@ class ClientRconProtocol(FBRconProtocol):
     def nullop(self, packet):
         pass
 
+    @classmethod
+    def _parse_listPlayers(cls, raw_structure):
+        return cls._parse_two_dimensional_structure_with_status(raw_structure, cls.PLAYER_STRUCTURE_GROUPING_COLUMN)
+
+    @classmethod
+    def _parse_two_dimensional_structure_with_status(cls, raw_structure, grouping_column):
+        # TODO: this ".pop(0)" implementation was probably written by someone who thinks python lists are Deque objects... Refactor
+        status = raw_structure.pop(0)
+        if status!=cls.STATUS_OK:
+            raise Exception("Unhandled error occured. Status of parsed structure: %s" % status)
+        fields = []
+        numparams = int(raw_structure.pop(0))
+        for i in range(numparams):
+            fields.append(raw_structure.pop(0))
+        len_rows = int(raw_structure.pop(0))
+
+        parsed_structure = {}
+        for i in range(len_rows):
+            parsed_entry = {}
+            for key in fields:
+                parsed_entry[key] = raw_structure.pop(0)
+            entry_grouping_key = parsed_entry[grouping_column] # if this raises KeyError, it is a programming error
+            parsed_structure[entry_grouping_key] = parsed_entry
+
+        return status, parsed_structure
+
     # IsFromClient,  Response,  Sequence: 2  Words: "OK" "7" "name" "guid" "teamId" "squadId" "kills" "deaths" "score" "0" 
     @defer.inlineCallbacks
     def admin_listPlayers(self):
-        players = yield self.sendRequest(["admin.listPlayers", "all"])
-        retval = {}
-        fields = []
-        status = players.pop(0)
-        numparams = int(players.pop(0)) 
-        for i in range(numparams):
-            fields.append(players.pop(0))
-        numplayers = int(players.pop(0))
-        for i in range(numplayers):
-            tmp = {}
-            for val in fields:
-                tmp[val] = players.pop(0)
-            retval[tmp['name']] = tmp
-        # print "listPlayers:",retval
-        defer.returnValue(retval)
+        raw_structure_with_status = yield self.sendRequest(["admin.listPlayers", "all"])
+        status, parsed_structure = self._parse_listPlayers(raw_structure_with_status)
+        defer.returnValue(parsed_structure)
     
     @defer.inlineCallbacks
     def admin_listOnePlayer(self, player):
-        players = yield self.sendRequest(["admin.listPlayers", "player", player])
-        retval = None
-        fields = []
-        status = players.pop(0)
-        numparams = int(players.pop(0)) 
-        for i in range(numparams):
-            fields.append(players.pop(0))
-        numplayers = int(players.pop(0))
-        tmp = {}
-        for val in fields:
-            tmp[val] = players.pop(0)
-        retval = tmp
-        defer.returnValue(retval)
-
+        raw_structure_with_status = yield self.sendRequest(["admin.listPlayers", "player", player])
+        status, parsed_structure = self._parse_listPlayers(raw_structure_with_status)
+        defer.returnValue(parsed_structure)
     
     @defer.inlineCallbacks
     def admin_kickPlayer(self, player, reason):
