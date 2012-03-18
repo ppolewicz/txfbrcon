@@ -163,7 +163,6 @@ class ClientRconProtocol(FBRconProtocol):
         }
         self.postMessage("server.onLevelLoaded", params)
 
-    @defer.inlineCallbacks
     def player_onJoin(self, packet):
         self.postMessage("player.onJoin", {'player': packet.words[1], 'guid': packet.words[2]})
 
