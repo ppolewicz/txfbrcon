@@ -2,7 +2,7 @@
 from twisted.internet import defer
 from twisted.application.service import MultiService
 from twisted.application.internet import TCPClient
-from clientrcon import getClientRconFactory
+from newclientrcon import getClientRconFactory
 from iniparse import ConfigParser
 
 class RconService(MultiService):

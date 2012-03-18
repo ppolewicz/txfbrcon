@@ -7,6 +7,8 @@ from twisted.internet.protocol import ReconnectingClientFactory
 from serverstate.server import Server
 
 from fbrcon import FBRconFactory, FBRconProtocol
+from serverstate.state import StateAPI
+
 
 def getClientRconFactory(params, rm):
     factory = ClientRconFactory(False, params, rm)
@@ -16,11 +18,9 @@ def getClientRconFactory(params, rm):
 class ClientRconFactory(ReconnectingClientFactory, FBRconFactory):
     ReconnectingClientFactory.maxdelay = 15
     ReconnectingClientFactory.factor = 1.6180339887498948
-    rm = None
     instance = None
     
-    def __init__(self, isServer = False, params = {}, rm = None): # TODO: params is shared between objects. That can't be good.
-        self.rm = rm
+    def __init__(self, isServer = False, params = {}): # TODO: params is shared between objects. That can't be good.
         FBRconFactory.__init__(self, isServer, params)
     
     def buildProtocol(self, addr):
@@ -29,7 +29,7 @@ class ClientRconFactory(ReconnectingClientFactory, FBRconFactory):
         self.instance = p
         return p
         
-levelhash = {
+LEVELHASH = {
     'MP_001':    'Grand Bazaar',
     'MP_003':    'Teheran Highway',
     'MP_007':    'Caspian Border',
@@ -45,7 +45,7 @@ levelhash = {
     'XP1_004':   'Wake Island',
 }
 
-modehash = {
+MODEHASH = {
     'ConquestLarge0':    'Conquest',
     'ConquestSmall0':    'Consolequest',
     'RushLarge0':        'Rush',
@@ -82,6 +82,7 @@ class ClientRconProtocol(FBRconProtocol):
         self.seq = 1
         self.callbacks = {}
         self.server = Server(self)
+        self.stateapi = StateAPI()
     
     # "OK" "Kentucky Fried Server" "64" "64" "ConquestLarge0" "XP1_001" "0" "2" "2" "60.563736" "109.1357" "0" "" "true" "true" "false" "6972" "781" "" "" "" "NAm" "iad" "US"
     @defer.inlineCallbacks
@@ -164,13 +165,7 @@ class ClientRconProtocol(FBRconProtocol):
 
     @defer.inlineCallbacks
     def player_onJoin(self, packet):
-        normal = str(packet.words[1]).lower()
-
-        # TODO: ?
-        #isgoon = yield self.mongo.bf3names.count({'bf3name': normal})
-        isgoon = 0
-
-        self.postMessage("player.onJoin", {'player': packet.words[1], 'guid': packet.words[2], 'isgoon': isgoon != 0})
+        self.postMessage("player.onJoin", {'player': packet.words[1], 'guid': packet.words[2]})
 
     def player_onAuthenticated(self, packet):
         self.postMessage("player.onAuthenticated", {'player': packet.words[1]})
@@ -192,7 +187,6 @@ class ClientRconProtocol(FBRconProtocol):
     @defer.inlineCallbacks
     def connectionMade(self):
         self.params = self.factory.params
-        #self.mongo  = self.factory.rm.mongo
         FBRconProtocol.connectionMade(self)
         ver   = yield self.sendRequest(["version"])
         salt  = yield self.sendRequest(["login.hashed"])
@@ -205,16 +199,8 @@ class ClientRconProtocol(FBRconProtocol):
         for player in players:
             pl = players[player]
             ph = self.server.addPlayer(pl['name'], pl['guid'])
-        self.postMessage("status", "connectionMade")
-    
-    def postMessage(self, facility, message):
-        print "postMessage %s: %s" % (facility, message)
-        #TODO: what is this for?
-        #self.factory.rm.postMessage("servers.%s.%s" % (self.params["tag"], facility), message)
-        pass
     
     def connectionLost(self, reason):
-        self.postMessage("status", "connectionLost")
         FBRconProtocol.connectionLost(self, reason)
     
     def sendRequest(self, strings):
