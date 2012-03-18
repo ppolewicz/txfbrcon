@@ -1,3 +1,4 @@
+from triggersystem import TriggerSystem
 class Server(object):
     _GAME_MOD_ID_VANILLA = 1001
     _GAME_MOD_ID_KARKAND = 1002
@@ -89,36 +90,70 @@ class Player(object):
         self.guid = guid
 
 class StateAPI(object):
+    def __init__(self):
+        self._triggers = TriggerSystem()
     def player_joined(self, player_name):
+        self._triggers.pre_player_joined(player_name)
         pass
+        self._triggers.post_player_joined(player_name)
     def player_left(self, player_name, player_info_block):
+        self._triggers.pre_player_left(self, player_name, player_info_block)
         pass
+        self._triggers.post_player_left(self, player_name, player_info_block)
     def player_kicked(self, player_name, kick_reason):
+        self._triggers.pre_player_kicked(self, player_name, kick_reason)
         pass
+        self._triggers.post_player_kicked(self, player_name, kick_reason)
     def player_authenticated(self, player_name, player_guid):
+        self._triggers.pre_player_authenticated(self, player_name, player_guid)
         pass
+        self._triggers.post_player_authenticated(self, player_name, player_guid)
     def player_died(self, player_info_block):
+        self._triggers.pre_player_died(self, player_info_block)
         pass
+        self._triggers.post_player_died(self, player_info_block)
     def player_spawned(self, player_name, player_kit, weapons, gadgets):
+        self._triggers.pre_player_spawned(self, player_name, player_kit, weapons, gadgets)
         pass
+        self._triggers.post_player_spawned(self, player_name, player_kit, weapons, gadgets)
     def player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location):
+        self._triggers.pre_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location)
         pass
+        self._triggers.post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location)
     def player_chat(self, player_name, message, target_player_subset):
+        self._triggers.pre_player_chat(self, player_name, message, target_player_subset)
         pass
+        self._triggers.post_player_chat(self, player_name, message, target_player_subset)
     def player_team_changed(self, player_name, team_id, squad_id):
+        self._triggers.pre_player_team_changed(self, player_name, team_id, squad_id)
         pass
+        self._triggers.post_player_team_changed(self, player_name, team_id, squad_id)
     def player_squad_changed(self, player_name, team_id, squad_id):
+        self._triggers.pre_player_squad_changed(self, player_name, team_id, squad_id)
         pass
+        self._triggers.post_player_squad_changed(self, player_name, team_id, squad_id)
     def pb_message(self, message):
+        self._triggers.pre_pb_message(self, message)
         pass
+        self._triggers.post_pb_message(self, message)
     def server_loading_level(self, level_name, rounds_played, rounds_total):
+        self._triggers.pre_server_loading_level(self, level_name, rounds_played, rounds_total)
         pass
+        self._triggers.post_server_loading_level(self, level_name, rounds_played, rounds_total)
     def server_start_level(self):
+        self._triggers.pre_server_start_level(self)
         pass
+        self._triggers.post_server_start_level(self)
     def server_round_over(self, winning_team_id):
+        self._triggers.pre_server_round_over(self, winning_team_id)
         pass
+        self._triggers.post_server_round_over(self, winning_team_id)
     def server_round_over_playerdata(self, final_player_info_block):
+        self._triggers.pre_server_round_over_playerdata(self, final_player_info_block)
         pass
+        self._triggers.post_server_round_over_playerdata(self, final_player_info_block)
     def server_round_over_teamdata(self, final_team_scores):
+        self._triggers.pre_server_round_over_teamdata(self, final_team_scores)
         pass
+        self._triggers.post_server_round_over_teamdata(self, final_team_scores)
 
