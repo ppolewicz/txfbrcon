@@ -12,7 +12,7 @@ class Server(object):
     def authorize_player(self, player_name, guid):
         self.get_player(player_name).authorize(guid)
 
-    def get_player(self, player_name):
+    def search_for_player(self, player_name):
         """ returns Player object or None """
         for team_id in self.teams:
             team = self.teams[team_id]
@@ -52,7 +52,7 @@ class Team(object):
             self.squads[squad_id] = Squad(squad_name)
         self.no_squad = self.squads[self._SQUAD_ID_NONE]
 
-    def get_player(self, player_name):
+    def search_for_player(self, player_name):
         """ returns Player object or None """
         for squad_id in self.teams:
             squad = self.players[squad_id]
@@ -70,7 +70,7 @@ class Squad(object):
             pass # TODO: handle this situation
         self.players.append(Player(player_name))
 
-    def get_player(self, player_name):
+    def search_for_player(self, player_name):
         """ returns Player object or None """
         for player in self.players:
             if player.name == player_name:
