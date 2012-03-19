@@ -66,7 +66,7 @@ class CommandHandler(object):
 class ClientRconProtocol(FBRconProtocol):
     """a unique instance of this spawns for each rcon connection. i think."""
     STATUS_OK = 'OK'
-    PLAYER_STRUCTURE_GROUPING_COLUMN = 'name'
+    PLAYER_INFO_BLOCK_GROUPING_COLUMN = 'name'
     
     def __init__(self):
         FBRconProtocol.__init__(self)
@@ -110,13 +110,12 @@ class ClientRconProtocol(FBRconProtocol):
         defer.returnValue(retval)
 
     @classmethod
-    def _parse_listPlayers(cls, raw_structure):
-        return cls._parse_two_dimensional_structure_with_status(raw_structure, cls.PLAYER_STRUCTURE_GROUPING_COLUMN)
+    def _parse_player_info_block(cls, raw_structure):
+        return cls._parse_two_dimensional_structure(raw_structure, cls.PLAYER_INFO_BLOCK_GROUPING_COLUMN)
 
     @classmethod
-    def _parse_two_dimensional_structure_with_status(cls, raw_structure, grouping_column):
+    def _parse_two_dimensional_structure(cls, raw_structure, grouping_column):
         # TODO: this ".pop(0)" implementation was probably written by someone who thinks python lists are Deque objects... Refactor
-        status = raw_structure.pop(0)
         if status!=cls.STATUS_OK:
             raise Exception("Unhandled error occured. Status of parsed structure: %s" % status)
         fields = []
@@ -133,19 +132,22 @@ class ClientRconProtocol(FBRconProtocol):
             entry_grouping_key = parsed_entry[grouping_column] # if this raises KeyError, it is a programming error
             parsed_structure[entry_grouping_key] = parsed_entry
 
-        return status, parsed_structure
+        return parsed_structure
 
-    # IsFromClient,  Response,  Sequence: 2  Words: "OK" "7" "name" "guid" "teamId" "squadId" "kills" "deaths" "score" "0" 
     @defer.inlineCallbacks
     def admin_listPlayers(self):
         raw_structure_with_status = yield self.sendRequest(["admin.listPlayers", "all"])
-        status, parsed_structure = self._parse_listPlayers(raw_structure_with_status)
+        status = raw_structure_with_status[0]
+        raw_structure = raw_structure_with_status[1:]
+        parsed_structure = self._parse_player_info_block(raw_structure)
         defer.returnValue(parsed_structure)
     
     @defer.inlineCallbacks
     def admin_listOnePlayer(self, player):
         raw_structure_with_status = yield self.sendRequest(["admin.listPlayers", "player", player])
-        status, parsed_structure = self._parse_listPlayers(raw_structure_with_status)
+        status = raw_structure_with_status[0]
+        raw_structure = raw_structure_with_status[1:]
+        parsed_structure = self._parse_player_info_block(raw_structure)
         defer.returnValue(parsed_structure)
     
     @defer.inlineCallbacks
