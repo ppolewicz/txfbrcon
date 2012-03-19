@@ -1,4 +1,4 @@
-from struct import *
+from struct import pack, unpack
 
 class FBRconPacket:
     isFromServer = None

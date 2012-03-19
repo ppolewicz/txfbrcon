@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from twisted.internet import defer
 from twisted.application.service import MultiService
 from twisted.application.internet import TCPClient
 from newclientrcon import getClientRconFactory

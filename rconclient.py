@@ -1,5 +1,3 @@
-import os
-import base64
 import hashlib
 from twisted.internet import defer
 from twisted.internet.defer import Deferred
@@ -101,8 +99,8 @@ class ClientRconProtocol(FBRconProtocol):
             'serverName': sinfo[1],
             'curPlayers': int(sinfo[2]),
             'maxPlayers': int(sinfo[3]),
-            'mode': modehash[sinfo[4]],
-            'level': levelhash[sinfo[5]],
+            'mode': MODEHASH[sinfo[4]],
+            'level': LEVELHASH[sinfo[5]],
             'roundsPlayed': int(sinfo[6]) + 1,
             'roundsTotal': int(sinfo[7]),
         }
@@ -115,8 +113,6 @@ class ClientRconProtocol(FBRconProtocol):
     @classmethod
     def _parse_two_dimensional_structure(cls, raw_structure, grouping_column):
         # TODO: this ".pop(0)" implementation was probably written by someone who thinks python lists are Deque objects... Refactor
-        if status!=cls.STATUS_OK:
-            raise Exception("Unhandled error occured. Status of parsed structure: %s" % status)
         fields = []
         numparams = int(raw_structure.pop(0))
         for i in range(numparams):
@@ -136,7 +132,7 @@ class ClientRconProtocol(FBRconProtocol):
     @defer.inlineCallbacks
     def admin_listPlayers(self):
         raw_structure_with_status = yield self.sendRequest(["admin.listPlayers", "all"])
-        status = raw_structure_with_status[0]
+        #status = raw_structure_with_status[0]
         raw_structure = raw_structure_with_status[1:]
         parsed_structure = self._parse_player_info_block(raw_structure)
         defer.returnValue(parsed_structure)
@@ -144,7 +140,7 @@ class ClientRconProtocol(FBRconProtocol):
     @defer.inlineCallbacks
     def admin_listOnePlayer(self, player):
         raw_structure_with_status = yield self.sendRequest(["admin.listPlayers", "player", player])
-        status = raw_structure_with_status[0]
+        #status = raw_structure_with_status[0]
         raw_structure = raw_structure_with_status[1:]
         parsed_structure = self._parse_player_info_block(raw_structure)
         defer.returnValue(parsed_structure)
@@ -164,8 +160,8 @@ class ClientRconProtocol(FBRconProtocol):
     # Unhandled event: IsFromServer, Request, Sequence: 132, Words: "server.onLevelLoaded" "MP_007" "ConquestLarge0" "0" "2"
     def server_onLevelLoaded(self, packet): 
         params = {
-        'level':    levelhash[packet.words[1]],
-        'mode':     modehash[packet.words[2]],
+        'level':    LEVELHASH[packet.words[1]],
+        'mode':     MODEHASH[packet.words[2]],
         'curRound': int(packet.words[3]) + 1,
         'maxRound': int(packet.words[4]),
         }
