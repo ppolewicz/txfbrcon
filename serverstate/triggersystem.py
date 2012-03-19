@@ -7,30 +7,28 @@ class TriggerType(object):
     POST_PLAYER_KICKED = 2006
     PRE_PLAYER_AUTHENTICATED = 2007
     POST_PLAYER_AUTHENTICATED = 2008
-    PRE_PLAYER_DIED = 2009
-    POST_PLAYER_DIED = 2010
-    PRE_PLAYER_SPAWNED = 2011
-    POST_PLAYER_SPAWNED = 2012
-    PRE_PLAYER_KILLED = 2013
-    POST_PLAYER_KILLED = 2014
-    PRE_PLAYER_CHAT = 2015
-    POST_PLAYER_CHAT = 2016
-    PRE_PLAYER_TEAM_CHANGED = 2017
-    POST_PLAYER_TEAM_CHANGED = 2018
-    PRE_PLAYER_SQUAD_CHANGED = 2019
-    POST_PLAYER_SQUAD_CHANGED = 2020
-    PRE_PB_MESSAGE = 2021
-    POST_PB_MESSAGE = 2022
-    PRE_SERVER_LOADING_LEVEL = 2023
-    POST_SERVER_LOADING_LEVEL = 2024
-    PRE_SERVER_START_LEVEL = 2025
-    POST_SERVER_START_LEVEL = 2026
-    PRE_SERVER_ROUND_OVER = 2027
-    POST_SERVER_ROUND_OVER = 2028
-    PRE_SERVER_ROUND_OVER_PLAYERDATA = 2029
-    POST_SERVER_ROUND_OVER_PLAYERDATA = 2030
-    PRE_SERVER_ROUND_OVER_TEAMDATA = 2031
-    POST_SERVER_ROUND_OVER_TEAMDATA = 2032
+    PRE_PLAYER_SPAWNED = 2009
+    POST_PLAYER_SPAWNED = 2010
+    PRE_PLAYER_KILLED = 2011
+    POST_PLAYER_KILLED = 2012
+    PRE_PLAYER_CHAT = 2013
+    POST_PLAYER_CHAT = 2014
+    PRE_PLAYER_TEAM_CHANGED = 2015
+    POST_PLAYER_TEAM_CHANGED = 2016
+    PRE_PLAYER_SQUAD_CHANGED = 2017
+    POST_PLAYER_SQUAD_CHANGED = 2018
+    PRE_PB_MESSAGE = 2019
+    POST_PB_MESSAGE = 2020
+    PRE_SERVER_LOADING_LEVEL = 2021
+    POST_SERVER_LOADING_LEVEL = 2022
+    PRE_SERVER_START_LEVEL = 2023
+    POST_SERVER_START_LEVEL = 2024
+    PRE_SERVER_ROUND_OVER = 2025
+    POST_SERVER_ROUND_OVER = 2026
+    PRE_SERVER_ROUND_OVER_PLAYERDATA = 2027
+    POST_SERVER_ROUND_OVER_PLAYERDATA = 2028
+    PRE_SERVER_ROUND_OVER_TEAMDATA = 2029
+    POST_SERVER_ROUND_OVER_TEAMDATA = 2030
 
 class TriggerSystem(object):
     def __init__(self):
@@ -72,12 +70,12 @@ class TriggerSystem(object):
         self._get_trigger_collection(trigger_type).append(trigger)
     def unregister_trigger(self, trigger_type, trigger):
         self._get_trigger_collection(trigger_type).remove(trigger)
-    def pre_player_joined(self, player_name):
+    def pre_player_joined(self, player_name, player_guid):
         for trigger in self._triggers_pre_player_joined:
-            trigger(player_name)
-    def post_player_joined(self, player_name):
+            trigger(player_name, player_guid)
+    def post_player_joined(self, player_name, player_guid):
         for trigger in self._triggers_post_player_joined:
-            trigger(player_name)
+            trigger(player_name, player_guid)
     def pre_player_left(self, player_name, player_info_block):
         for trigger in self._triggers_pre_player_left:
             trigger(player_name, player_info_block)
@@ -96,24 +94,18 @@ class TriggerSystem(object):
     def post_player_authenticated(self, player_name, player_guid):
         for trigger in self._triggers_post_player_authenticated:
             trigger(player_name, player_guid)
-    def pre_player_died(self, player_info_block):
-        for trigger in self._triggers_pre_player_died:
-            trigger(player_info_block)
-    def post_player_died(self, player_info_block):
-        for trigger in self._triggers_post_player_died:
-            trigger(player_info_block)
-    def pre_player_spawned(self, player_name, player_kit, weapons, gadgets):
+    def pre_player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3):
         for trigger in self._triggers_pre_player_spawned:
-            trigger(player_name, player_kit, weapons, gadgets)
-    def post_player_spawned(self, player_name, player_kit, weapons, gadgets):
+            trigger(player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3)
+    def post_player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3):
         for trigger in self._triggers_post_player_spawned:
-            trigger(player_name, player_kit, weapons, gadgets)
-    def pre_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location):
+            trigger(player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3)
+    def pre_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z):
         for trigger in self._triggers_pre_player_killed:
-            trigger(killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location)
-    def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location):
+            trigger(killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z)
+    def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z):
         for trigger in self._triggers_post_player_killed:
-            trigger(killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location)
+            trigger(killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z)
     def pre_player_chat(self, player_name, message, target_player_subset):
         for trigger in self._triggers_pre_player_chat:
             trigger(player_name, message, target_player_subset)

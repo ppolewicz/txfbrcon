@@ -54,6 +54,17 @@ MODEHASH = {
     'TeamDeathMatch0':   'Team Deathmatch',
 }
 
+class CommandHandler(object):
+    def __init__(self, api_handle, len_arguments):
+        self.api_handle = api_handle
+        self.len_arguments = len_arguments
+
+    def __call__(self, packet):
+        args = []
+        for i in range(self.len_arguments):
+            args.append(packet.pop(0))
+        self.api_handle(*args)
+
 class ClientRconProtocol(FBRconProtocol):
     """a unique instance of this spawns for each rcon connection. i think."""
     STATUS_OK = 'OK'
@@ -61,28 +72,29 @@ class ClientRconProtocol(FBRconProtocol):
     
     def __init__(self):
         FBRconProtocol.__init__(self)
-        self.handlers = {
-            "player.onJoin":                self.player_onJoin,
-            "player.onLeave":               self.player_onLeave,
-            "player.onAuthenticated":       self.player_onAuthenticated,
-            "player.onChat":                self.player_onChat,
-            "player.onTeamChange":          self.player_onTeamChange,
-            "player.onSquadChange":         self.player_onSquadChange,
-            "player.onKill":                self.nullop, # temporary
-            "server.onLevelLoaded":         self.server_onLevelLoaded,
-            "punkBuster.onMessage":         self.nullop,
-            "player.onSpawn":               self.nullop,
-            "version":                      self.nullop,
-            "serverInfo":                   self.nullop,
-            "listPlayers":                  self.nullop,
-            "server.onRoundOver":           self.nullop,
-            "server.onRoundOverPlayers":    self.nullop,
-            "server.onRoundOverTeamScores": self.nullop,
-        }
+        self.stateapi = StateAPI()
+        self.handlers = {}
+        self._register_handler('player.onJoin', self.stateapi.player_joined, 2)
+        self._register_handler('player.onLeave', self.stateapi.player_left, 2)
+        self._register_handler('player.onAuthenticated', self.stateapi.player_authenticated, 2)
+        self._register_handler('player.onSpawn', self.stateapi.player_spawned, 1+1+3+3)
+        self._register_handler('player.onKicked', self.stateapi.player_kicked, 2)
+        self._register_handler('player.onChat', self.stateapi.player_chat, 3)
+        self._register_handler('player.onTeamChange', self.stateapi.player_team_changed, 3)
+        self._register_handler('player.onSquadChange', self.stateapi.player_squad_changed, 3)
+        self._register_handler('punkBuster.onMessage', self.stateapi.pb_message, 1)
+        self._register_handler('server.onLoadingLevel', self.stateapi.server_loading_level, 3)
+        self._register_handler('server.onLevelStarted', self.stateapi.server_start_level, 0)
+        self._register_handler('server.onRoundOver', self.stateapi.server_round_over, 1)
+        self._register_handler('server.onRoundOverPlayers', self.stateapi.server_round_over_playerdata, 1)
+        self._register_handler('server.onRoundOverTeamScores', self.stateapi.server_round_over_teamdata, 1)
+        self._register_handler('player.onKill', self.stateapi.player_killed, 3+3+3)
         self.seq = 1
         self.callbacks = {}
         self.server = Server(self)
-        self.stateapi = StateAPI()
+
+    def _register_handler(self, command, api_handle, len_arguments):
+        self.handlers[command] = CommandHandler(api_handle, len_arguments)
     
     # "OK" "Kentucky Fried Server" "64" "64" "ConquestLarge0" "XP1_001" "0" "2" "2" "60.563736" "109.1357" "0" "" "true" "true" "false" "6972" "781" "" "" "" "NAm" "iad" "US"
     @defer.inlineCallbacks
@@ -98,9 +110,6 @@ class ClientRconProtocol(FBRconProtocol):
             'roundsTotal': int(sinfo[7]),
         }
         defer.returnValue(retval)
-    
-    def nullop(self, packet):
-        pass
 
     @classmethod
     def _parse_listPlayers(cls, raw_structure):

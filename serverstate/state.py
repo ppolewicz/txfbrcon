@@ -92,10 +92,10 @@ class Player(object):
 class StateAPI(object):
     def __init__(self):
         self._triggers = TriggerSystem()
-    def player_joined(self, player_name):
-        self._triggers.pre_player_joined(player_name)
+    def player_joined(self, player_name, player_guid):
+        self._triggers.pre_player_joined(player_name, player_guid)
         pass
-        self._triggers.post_player_joined(player_name)
+        self._triggers.post_player_joined(player_name, player_guid)
     def player_left(self, player_name, player_info_block):
         self._triggers.pre_player_left(self, player_name, player_info_block)
         pass
@@ -108,18 +108,14 @@ class StateAPI(object):
         self._triggers.pre_player_authenticated(self, player_name, player_guid)
         pass
         self._triggers.post_player_authenticated(self, player_name, player_guid)
-    def player_died(self, player_info_block):
-        self._triggers.pre_player_died(self, player_info_block)
+    def player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3):
+        self._triggers.pre_player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3)
         pass
-        self._triggers.post_player_died(self, player_info_block)
-    def player_spawned(self, player_name, player_kit, weapons, gadgets):
-        self._triggers.pre_player_spawned(self, player_name, player_kit, weapons, gadgets)
+        self._triggers.post_player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3)
+    def player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z):
+        self._triggers.pre_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z)
         pass
-        self._triggers.post_player_spawned(self, player_name, player_kit, weapons, gadgets)
-    def player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location):
-        self._triggers.pre_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location)
-        pass
-        self._triggers.post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_location, deadguy_approx_location)
+        self._triggers.post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z)
     def player_chat(self, player_name, message, target_player_subset):
         self._triggers.pre_player_chat(self, player_name, message, target_player_subset)
         pass
