@@ -60,9 +60,7 @@ class CommandHandler(object):
         self.len_arguments = len_arguments
 
     def __call__(self, packet):
-        args = []
-        for i in range(self.len_arguments):
-            args.append(packet.pop(0))
+        args = packet.words[1:]
         self.api_handle(*args)
 
 class ClientRconProtocol(FBRconProtocol):
