@@ -4,11 +4,8 @@ import hashlib
 from twisted.internet import defer
 from twisted.internet.defer import Deferred
 from twisted.internet.protocol import ReconnectingClientFactory
-from serverstate.server import Server
-
 from fbrcon import FBRconFactory, FBRconProtocol
-from serverstate.state import StateAPI
-
+from serverstate.state import StateAPI, Server
 
 def getClientRconFactory(params, rm):
     factory = ClientRconFactory(False, params, rm)
@@ -70,7 +67,8 @@ class ClientRconProtocol(FBRconProtocol):
     
     def __init__(self):
         FBRconProtocol.__init__(self)
-        self.stateapi = StateAPI()
+        self.server = Server()
+        self.stateapi = StateAPI(self.server)
         self.handlers = {}
         self._register_handler('player.onJoin', self.stateapi.player_joined, 2)
         self._register_handler('player.onLeave', self.stateapi.player_left, 2)
@@ -87,9 +85,10 @@ class ClientRconProtocol(FBRconProtocol):
         self._register_handler('server.onRoundOverPlayers', self.stateapi.server_round_over_playerdata, 1)
         self._register_handler('server.onRoundOverTeamScores', self.stateapi.server_round_over_teamdata, 1)
         self._register_handler('player.onKill', self.stateapi.player_killed, 3+3+3)
+        self.connection_made_handler = self.stateapi.connection_made
+        self.connection_lost_handler = self.stateapi.connection_lost
         self.seq = 1
         self.callbacks = {}
-        self.server = Server(self)
 
     def _register_handler(self, command, api_handle, len_arguments):
         self.handlers[command] = CommandHandler(api_handle, len_arguments)
@@ -172,26 +171,6 @@ class ClientRconProtocol(FBRconProtocol):
         }
         self.postMessage("server.onLevelLoaded", params)
 
-    def player_onJoin(self, packet):
-        self.postMessage("player.onJoin", {'player': packet.words[1], 'guid': packet.words[2]})
-
-    def player_onAuthenticated(self, packet):
-        self.postMessage("player.onAuthenticated", {'player': packet.words[1]})
-        
-    def player_onLeave(self, packet):
-        self.postMessage("player.onLeave", {'player': packet.words[1]})
-    
-    def player_onChat(self, packet):
-        self.postMessage("player.onChat", {'player': packet.words[1], 'message': packet.words[2]})
-    
-    # "player.onTeamChange" "toomuchmoney678" "2" "0"
-    def player_onTeamChange(self, packet):
-        pass
-    
-    # "player.onSquadChange" "toomuchmoney678" "2" "3"
-    def player_onSquadChange(self, packet):
-        pass
-        
     @defer.inlineCallbacks
     def connectionMade(self):
         self.params = self.factory.params
@@ -203,12 +182,14 @@ class ClientRconProtocol(FBRconProtocol):
         m.update(self.factory.params["secret"])
         login = yield self.sendRequest(["login.hashed", m.digest().encode("hex").upper()])
         event = yield self.sendRequest(["admin.eventsEnabled", "true"])
+        self.connection_made_handler()
         players = yield self.admin_listPlayers()
         for player in players:
             pl = players[player]
             ph = self.server.addPlayer(pl['name'], pl['guid'])
     
     def connectionLost(self, reason):
+        self.connection_lost_handler(reason)
         FBRconProtocol.connectionLost(self, reason)
     
     def sendRequest(self, strings):

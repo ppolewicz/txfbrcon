@@ -6,8 +6,8 @@ class Server(object):
     def __init__(self):
         self.neutral_team = Team(self._TEAM_ID_NEUTRAL)
 
-    def add_player(self, player_name):
-        self.neutral_team.no_squad.add_player(player_name)
+    def add_player(self, player_name, player_guid):
+        self.neutral_team.no_squad.add_player(player_name, player_guid)
 
     def authorize_player(self, player_name, guid):
         self.get_player(player_name).authorize(guid)
@@ -65,10 +65,10 @@ class Squad(object):
     def __init__(self):
         self.players = []
 
-    def add_player(self, player_name):
+    def add_player(self, player_name, player_guid):
         if player_name in self.players:
             pass # TODO: handle this situation
-        self.players.append(Player(player_name))
+        self.players.append(Player(player_name, player_guid))
 
     def search_for_player(self, player_name):
         """ returns Player object or None """
@@ -82,16 +82,17 @@ class Player(object):
     _MODERATION_LEVEL_NORMAL = 1002
     _MODERATION_LEVEL_VOICE  = 1003
     _MODERATION_LEVEL_ADMIN  = 1004
-    def __init__(self, player_name):
+    def __init__(self, player_name, player_guid=None):
         self.name = player_name
-        self.guid = None
+        self.guid = player_guid
 
     def authorize(self, guid):
         self.guid = guid
 
 class StateAPI(object):
-    def __init__(self):
+    def __init__(self, server):
         self._triggers = TriggerSystem()
+        self.server = server
     def player_joined(self, player_name, player_guid):
         self._triggers.pre_player_joined(player_name, player_guid)
         pass
@@ -106,7 +107,9 @@ class StateAPI(object):
         self._triggers.post_player_kicked(self, player_name, kick_reason)
     def player_authenticated(self, player_name, player_guid):
         self._triggers.pre_player_authenticated(self, player_name, player_guid)
-        pass
+        player = self.server.search_for_player(player_name)
+        if player is not None:
+            player.authorize(player_guid)
         self._triggers.post_player_authenticated(self, player_name, player_guid)
     def player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3):
         self._triggers.pre_player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3)
