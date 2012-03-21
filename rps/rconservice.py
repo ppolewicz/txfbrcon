@@ -14,7 +14,9 @@ class RconService(MultiService):
 
     def startService(self):
         cfgpr = ConfigParser()
-        cfgpr.read('config.ini')
+
+        # TODO: config location from argparse or something
+        cfgpr.read('config/config.ini')
         ip = cfgpr.get('main', 'ip')
         port = cfgpr.getint('main', 'port')
         tag = cfgpr.get('main', 'tag')
