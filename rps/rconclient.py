@@ -5,8 +5,8 @@ from twisted.internet.protocol import ReconnectingClientFactory
 from fbrcon import FBRconFactory, FBRconProtocol
 from serverstate.state import StateAPI, Server
 
-def getClientRconFactory(params, rm):
-    factory = ClientRconFactory(False, params, rm)
+def getClientRconFactory(params):
+    factory = ClientRconFactory(False, params)
     factory.protocol = ClientRconProtocol
     return factory
 
@@ -49,14 +49,26 @@ MODEHASH = {
     'TeamDeathMatch0':   'Team Deathmatch',
 }
 
-class CommandHandler(object):
+class SimpleCommandHandler(object):
     def __init__(self, api_handle, len_arguments):
         self.api_handle = api_handle
+        self.len_arguments = len_arguments # TODO: this length seems to be useless after last refactor. Remove?
+
+    def __call__(self, packet):
+        #packet.words[0] = 'player.OnChat' etc
+        args = packet.words[1:]
+        self.api_handle(*args)
+
+class PreProcessorCommandHandler(object):
+    def __init__(self, api_handle, len_arguments, processor):
+        self.api_handle = api_handle
         self.len_arguments = len_arguments
+        self.processor = processor
 
     def __call__(self, packet):
         args = packet.words[1:]
-        self.api_handle(*args)
+        pre_processed_args = self.processor(args)
+        self.api_handle(*pre_processed_args)
 
 class ClientRconProtocol(FBRconProtocol):
     """a unique instance of this spawns for each rcon connection. i think."""
@@ -66,7 +78,7 @@ class ClientRconProtocol(FBRconProtocol):
     def __init__(self):
         FBRconProtocol.__init__(self)
         self.server = Server()
-        self.stateapi = StateAPI(self.server)
+        self.stateapi = StateAPI(self.server, self)
         self.handlers = {}
         self._register_handler('player.onJoin', self.stateapi.player_joined, 2)
         self._register_handler('player.onLeave', self.stateapi.player_left, 2)
@@ -83,27 +95,36 @@ class ClientRconProtocol(FBRconProtocol):
         self._register_handler('server.onRoundOverPlayers', self.stateapi.server_round_over_playerdata, 1)
         self._register_handler('server.onRoundOverTeamScores', self.stateapi.server_round_over_teamdata, 1)
         self._register_handler('player.onKill', self.stateapi.player_killed, 3+3+3)
+        self._register_handler('serverInfo', self.stateapi.server_info, 7, processor=self.server_info_parser)
         self.connection_made_handler = self.stateapi.connection_made
         self.connection_lost_handler = self.stateapi.connection_lost
         self.seq = 1
         self.callbacks = {}
 
-    def _register_handler(self, command, api_handle, len_arguments):
-        self.handlers[command] = CommandHandler(api_handle, len_arguments)
+    def _register_handler(self, command, api_handle, len_arguments, processor=None):
+        if processor is None:
+            self.handlers[command] = SimpleCommandHandler(api_handle, len_arguments)
+        else:
+            self.handlers[command] = PreProcessorCommandHandler(api_handle, len_arguments, processor)
     
-    # "OK" "Kentucky Fried Server" "64" "64" "ConquestLarge0" "XP1_001" "0" "2" "2" "60.563736" "109.1357" "0" "" "true" "true" "false" "6972" "781" "" "" "" "NAm" "iad" "US"
+    # "Kentucky Fried Server" "64" "64" "ConquestLarge0" "XP1_001" "0" "2" "2" "60.563736" "109.1357" "0" "" "true" "true" "false" "6972" "781" "" "" "" "NAm" "iad" "US"
+    def server_info_parser(self, raw_structure):
+        sinfo = raw_structure
+        retval = [
+            sinfo[0], # serverName
+            int(sinfo[1]), # curPlayers
+            int(sinfo[2]), # maxPlayers
+            MODEHASH[sinfo[3]], # mode
+            LEVELHASH[sinfo[4]], # level
+            int(sinfo[5]) + 1, # roundsPlayed
+            int(sinfo[6]), # roundsTotal
+        ]
+        return retval
+
     @defer.inlineCallbacks
-    def serverInfo(self):
+    def updateServerInfo(self):
         sinfo = yield self.sendRequest(["serverInfo"])
-        retval = {
-            'serverName': sinfo[1],
-            'curPlayers': int(sinfo[2]),
-            'maxPlayers': int(sinfo[3]),
-            'mode': MODEHASH[sinfo[4]],
-            'level': LEVELHASH[sinfo[5]],
-            'roundsPlayed': int(sinfo[6]) + 1,
-            'roundsTotal': int(sinfo[7]),
-        }
+        retval = self.server_info_parser(sinfo[1:])
         defer.returnValue(retval)
 
     @classmethod
@@ -179,10 +200,6 @@ class ClientRconProtocol(FBRconProtocol):
         login = yield self.sendRequest(["login.hashed", m.digest().encode("hex").upper()])
         event = yield self.sendRequest(["admin.eventsEnabled", "true"])
         self.connection_made_handler()
-        players = yield self.admin_listPlayers()
-        for player in players:
-            pl = players[player]
-            ph = self.server.addPlayer(pl['name'], pl['guid'])
     
     def connectionLost(self, reason):
         self.connection_lost_handler(reason)

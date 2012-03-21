@@ -1,4 +1,10 @@
 class TriggerType(object):
+    PRE_CONNECTION_MADE = 1995
+    POST_CONNECTION_MADE = 1996
+    PRE_CONNECTION_LOST = 1997
+    POST_CONNECTION_LOST = 1998
+    PRE_SERVER_INFO = 1999
+    POST_SERVER_INFO = 2000
     PRE_PLAYER_JOINED = 2001
     POST_PLAYER_JOINED = 2002
     PRE_PLAYER_LEFT = 2003
@@ -32,6 +38,13 @@ class TriggerType(object):
 
 class TriggerSystem(object):
     def __init__(self):
+        self._trigger_index = {}
+        self._trigger_index[TriggerType.PRE_CONNECTION_MADE] = self._triggers_pre_connection_made = []
+        self._trigger_index[TriggerType.POST_CONNECTION_MADE] = self._triggers_post_connection_made = []
+        self._trigger_index[TriggerType.PRE_CONNECTION_LOST] = self._triggers_pre_connection_lost = []
+        self._trigger_index[TriggerType.POST_CONNECTION_LOST] = self._triggers_post_connection_lost = []
+        self._trigger_index[TriggerType.PRE_SERVER_INFO] = self._triggers_pre_server_info = []
+        self._trigger_index[TriggerType.POST_SERVER_INFO] = self._triggers_post_server_info = []
         self._trigger_index[TriggerType.PRE_PLAYER_JOINED] = self._triggers_pre_player_joined = []
         self._trigger_index[TriggerType.POST_PLAYER_JOINED] = self._triggers_post_player_joined = []
         self._trigger_index[TriggerType.PRE_PLAYER_LEFT] = self._triggers_pre_player_left = []
@@ -40,8 +53,6 @@ class TriggerSystem(object):
         self._trigger_index[TriggerType.POST_PLAYER_KICKED] = self._triggers_post_player_kicked = []
         self._trigger_index[TriggerType.PRE_PLAYER_AUTHENTICATED] = self._triggers_pre_player_authenticated = []
         self._trigger_index[TriggerType.POST_PLAYER_AUTHENTICATED] = self._triggers_post_player_authenticated = []
-        self._trigger_index[TriggerType.PRE_PLAYER_DIED] = self._triggers_pre_player_died = []
-        self._trigger_index[TriggerType.POST_PLAYER_DIED] = self._triggers_post_player_died = []
         self._trigger_index[TriggerType.PRE_PLAYER_SPAWNED] = self._triggers_pre_player_spawned = []
         self._trigger_index[TriggerType.POST_PLAYER_SPAWNED] = self._triggers_post_player_spawned = []
         self._trigger_index[TriggerType.PRE_PLAYER_KILLED] = self._triggers_pre_player_killed = []
@@ -70,6 +81,25 @@ class TriggerSystem(object):
         self._get_trigger_collection(trigger_type).append(trigger)
     def unregister_trigger(self, trigger_type, trigger):
         self._get_trigger_collection(trigger_type).remove(trigger)
+    def pre_connection_made(self):
+        for trigger in self._triggers_pre_connection_made:
+            trigger()
+    def post_connection_made(self):
+        for trigger in self._triggers_post_connection_made:
+            trigger()
+    def pre_connection_lost(self):
+        for trigger in self._triggers_pre_connection_lost:
+            trigger()
+    def post_connection_lost(self):
+        for trigger in self._triggers_post_connection_lost:
+            trigger()
+    def pre_server_info(self, *args): # TODO
+        print "pre_server_info", args
+        for trigger in self._triggers_pre_connection_lost:
+            trigger() # !
+    def post_server_info(self, *args): # TODO
+        for trigger in self._triggers_post_connection_lost:
+            trigger() # !
     def pre_player_joined(self, player_name, player_guid):
         for trigger in self._triggers_pre_player_joined:
             trigger(player_name, player_guid)
@@ -106,12 +136,12 @@ class TriggerSystem(object):
     def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z):
         for trigger in self._triggers_post_player_killed:
             trigger(killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z)
-    def pre_player_chat(self, player_name, message, target_player_subset):
+    def pre_player_chat(self, player_name, message):
         for trigger in self._triggers_pre_player_chat:
-            trigger(player_name, message, target_player_subset)
-    def post_player_chat(self, player_name, message, target_player_subset):
+            trigger(player_name, message)
+    def post_player_chat(self, player_name, message):
         for trigger in self._triggers_post_player_chat:
-            trigger(player_name, message, target_player_subset)
+            trigger(player_name, message)
     def pre_player_team_changed(self, player_name, team_id, squad_id):
         for trigger in self._triggers_pre_player_team_changed:
             trigger(player_name, team_id, squad_id)

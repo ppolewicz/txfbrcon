@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from twisted.application.service import MultiService
 from twisted.application.internet import TCPClient
-from newclientrcon import getClientRconFactory
+from rconclient import getClientRconFactory
 from iniparse import ConfigParser
 
 class RconService(MultiService):
@@ -28,7 +28,7 @@ class RconService(MultiService):
                 'tag': tag, # TODO: what is this:
                 'secret': password, # TODO: refactor how this kind of data is passed and stored in factory
                 }
-        factory = getClientRconFactory(server_data, self)
+        factory = getClientRconFactory(server_data)
         client  = TCPClient(server_data["ip"], server_data["port"], factory)
         client.setServiceParent(self)
         self.server["factory"] = factory
