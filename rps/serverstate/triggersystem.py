@@ -87,14 +87,13 @@ class TriggerSystem(object):
     def post_connection_made(self):
         for trigger in self._triggers_post_connection_made:
             trigger()
-    def pre_connection_lost(self):
+    def pre_connection_lost(self, reason):
         for trigger in self._triggers_pre_connection_lost:
-            trigger()
-    def post_connection_lost(self):
+            trigger(reason)
+    def post_connection_lost(self, reason):
         for trigger in self._triggers_post_connection_lost:
-            trigger()
+            trigger(reason)
     def pre_server_info(self, *args): # TODO
-        print "pre_server_info", args
         for trigger in self._triggers_pre_connection_lost:
             trigger() # !
     def post_server_info(self, *args): # TODO
@@ -118,24 +117,24 @@ class TriggerSystem(object):
     def post_player_kicked(self, player_name, kick_reason):
         for trigger in self._triggers_post_player_kicked:
             trigger(player_name, kick_reason)
-    def pre_player_authenticated(self, player_name, player_guid):
+    def pre_player_authenticated(self, player_name):
         for trigger in self._triggers_pre_player_authenticated:
-            trigger(player_name, player_guid)
-    def post_player_authenticated(self, player_name, player_guid):
+            trigger(player_name)
+    def post_player_authenticated(self, player_name):
         for trigger in self._triggers_post_player_authenticated:
-            trigger(player_name, player_guid)
-    def pre_player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3):
+            trigger(player_name)
+    def pre_player_spawned(self, player_name, team_id):
         for trigger in self._triggers_pre_player_spawned:
-            trigger(player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3)
-    def post_player_spawned(self, player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3):
+            trigger(player_name, team_id)
+    def post_player_spawned(self, player_name, team_id):
         for trigger in self._triggers_post_player_spawned:
-            trigger(player_name, player_kit, weapon1, weapon2, weapon3, gadget1, gadget2, gadget3)
-    def pre_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z):
+            trigger(player_name, team_id)
+    def pre_player_killed(self, killer_name, deadguy_name, weapon, is_headshot):
         for trigger in self._triggers_pre_player_killed:
-            trigger(killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z)
-    def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z):
+            trigger(killer_name, deadguy_name, weapon, is_headshot)
+    def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot):
         for trigger in self._triggers_post_player_killed:
-            trigger(killer_name, deadguy_name, weapon, is_headshot, killer_approx_x, killer_approx_y, killer_approx_z, deadguy_approx_x, deadguy_approx_y, deadguy_approx_z)
+            trigger(killer_name, deadguy_name, weapon, is_headshot)
     def pre_player_chat(self, player_name, message):
         for trigger in self._triggers_pre_player_chat:
             trigger(player_name, message)

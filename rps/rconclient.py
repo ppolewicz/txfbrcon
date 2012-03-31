@@ -4,6 +4,7 @@ from twisted.internet.defer import Deferred
 from twisted.internet.protocol import ReconnectingClientFactory
 from fbrcon import FBRconFactory, FBRconProtocol
 from serverstate.state import StateAPI, Server
+from plugins.debug_plugin import DebugPlugin
 
 def getClientRconFactory(params):
     factory = ClientRconFactory(False, params)
@@ -66,6 +67,7 @@ class PreProcessorCommandHandler(object):
         self.processor = processor
 
     def __call__(self, packet):
+        #packet.words[0] = 'serverInfo' etc
         args = packet.words[1:]
         pre_processed_args = self.processor(args)
         self.api_handle(*pre_processed_args)
@@ -82,8 +84,8 @@ class ClientRconProtocol(FBRconProtocol):
         self.handlers = {}
         self._register_handler('player.onJoin', self.stateapi.player_joined, 2)
         self._register_handler('player.onLeave', self.stateapi.player_left, 2)
-        self._register_handler('player.onAuthenticated', self.stateapi.player_authenticated, 2)
-        self._register_handler('player.onSpawn', self.stateapi.player_spawned, 1+1+3+3)
+        self._register_handler('player.onAuthenticated', self.stateapi.player_authenticated, 1)
+        self._register_handler('player.onSpawn', self.stateapi.player_spawned, 1+1)
         self._register_handler('player.onKicked', self.stateapi.player_kicked, 2)
         self._register_handler('player.onChat', self.stateapi.player_chat, 3)
         self._register_handler('player.onTeamChange', self.stateapi.player_team_changed, 3)
@@ -94,12 +96,14 @@ class ClientRconProtocol(FBRconProtocol):
         self._register_handler('server.onRoundOver', self.stateapi.server_round_over, 1)
         self._register_handler('server.onRoundOverPlayers', self.stateapi.server_round_over_playerdata, 1)
         self._register_handler('server.onRoundOverTeamScores', self.stateapi.server_round_over_teamdata, 1)
-        self._register_handler('player.onKill', self.stateapi.player_killed, 3+3+3)
-        self._register_handler('serverInfo', self.stateapi.server_info, 7, processor=self.server_info_parser)
+        self._register_handler('player.onKill', self.stateapi.player_killed, 3)
+        self._register_handler('serverInfo', self.stateapi.server_info_hint, 0)
+        #self._register_handler('serverInfo', self.stateapi.server_info, 7, processor=self.server_info_parser)
         self.connection_made_handler = self.stateapi.connection_made
         self.connection_lost_handler = self.stateapi.connection_lost
         self.seq = 1
         self.callbacks = {}
+        self.plugins = DebugPlugin(self.stateapi, self)
 
     def _register_handler(self, command, api_handle, len_arguments, processor=None):
         if processor is None:
@@ -110,6 +114,7 @@ class ClientRconProtocol(FBRconProtocol):
     # "Kentucky Fried Server" "64" "64" "ConquestLarge0" "XP1_001" "0" "2" "2" "60.563736" "109.1357" "0" "" "true" "true" "false" "6972" "781" "" "" "" "NAm" "iad" "US"
     def server_info_parser(self, raw_structure):
         sinfo = raw_structure
+        print "SERVER_INFO_PARSER:", raw_structure # TODO this needs to be all read
         retval = [
             sinfo[0], # serverName
             int(sinfo[1]), # curPlayers
@@ -175,8 +180,8 @@ class ClientRconProtocol(FBRconProtocol):
         retval = yield self.sendRequest(["admin.killPlayer", player])
     
     @defer.inlineCallbacks
-    def admin_say(self, message, players):
-        retval = yield self.sendRequest(["admin.say", message, players])
+    def admin_say(self, message):
+        retval = yield self.sendRequest(["admin.say", message])
     
     # Unhandled event: IsFromServer, Request, Sequence: 132, Words: "server.onLevelLoaded" "MP_007" "ConquestLarge0" "0" "2"
     def server_onLevelLoaded(self, packet): 
@@ -235,10 +240,10 @@ class ClientRconProtocol(FBRconProtocol):
         command = packet.words[0]
         if command in self.handlers:
             handler = self.handlers[command]
-            try:
-                handler(packet)
-            except Exception, e:
-                print "Caught Exception in gotRequest:", e
+            #try:
+            handler(packet)
+            #except Exception, e:
+            #    print "Caught Exception in gotRequest:", e
         else:
             print "Unhandled event:", packet
         self.sendResponse(packet)
