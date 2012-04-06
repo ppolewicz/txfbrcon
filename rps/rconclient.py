@@ -163,8 +163,6 @@ class ClientRconProtocol(FBRconProtocol):
     def admin_listPlayers(self):
         raw_structure_with_status = yield self.sendRequest(["admin.listPlayers", "all"])
         #status = raw_structure_with_status[0]
-        if raw_structure_with_status is None:
-            return # TODO: happens, apparetnly. Race condition?
         raw_structure = raw_structure_with_status[1:]
         parsed_structure = self._parse_player_info_block(raw_structure)
         defer.returnValue(parsed_structure)
@@ -225,10 +223,11 @@ class ClientRconProtocol(FBRconProtocol):
         cb = Deferred()
 
         # TODO: remove debug:
-        print "sending", strings
+        print "[rcon] sending", strings
         if not strings[0].startswith('login'):
             def printer(response):
-                print """response = %s""" % response
+                print """[rcon] response = %s""" % response
+                return response
             cb.addCallback(printer)
 
         seq = self.peekSeq()

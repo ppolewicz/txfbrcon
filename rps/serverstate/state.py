@@ -153,12 +153,9 @@ class StateAPI(object):
     def connection_made(self):
         self.triggers.pre_connection_made()
         players = yield self.rcon.admin_listPlayers()
-        if players is not None:
-            for player in players:
-                pl = players[player]
-                self.server.add_player(pl['name'], pl['guid'])
-        else:
-            print "after connection was made, admin_listPlayers gave no result" # TODO
+        for player in players:
+            pl = players[player]
+            self.server.add_player(pl['name'], pl['guid'])
         self.triggers.post_connection_made()
         self.server_info_hint()
     def connection_lost(self, reason):
