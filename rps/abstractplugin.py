@@ -9,4 +9,6 @@ class AbstractPlugin(object):
         for trigger_type, trigger in self.triggertype_trigger:
             tsr(trigger_type, trigger)
 
+    def log(self, message):
+        print "[%s] %s" % (self.__class__.__name__, message)
 

@@ -42,8 +42,6 @@ class ToyPlugin(AbstractPlugin):
                 (TriggerType.POST_SERVER_ROUND_OVER_TEAMDATA, self.post_server_round_over_teamdata),
                 ]
         super(ToyPlugin, self).__init__(state, rcon)
-    def log(self, message):
-        pass
     def pre_connection_made(self):
         self.log("""pre_connection_made()""")
     def post_connection_made(self):
