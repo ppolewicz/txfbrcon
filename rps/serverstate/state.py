@@ -1,14 +1,20 @@
 from twisted.internet import defer
 from triggersystem import TriggerSystem
+from fbrconconst import PlayerSubsetPrefix
 
-class Server(object):
+class AbstractMessagesystemParticipant(object):
+    MESSAGE_PREFIX = None
+    def get_message_participant_info(self):
+        return self.MESSAGE_PREFIX, self.identifier
+
+class Server(AbstractMessagesystemParticipant):
     _GAME_MOD_ID_VANILLA = 1001
     _GAME_MOD_ID_KARKAND = 1002
     _TEAM_ID_NEUTRAL = 0
-    _TEAM_NAME_NEUTRAL = 'UNASSIGNED'
+    MESSAGE_PREFIX = PlayerSubsetPrefix.ALL
     def __init__(self):
         self.teams = {}
-        self.teams[self._TEAM_ID_NEUTRAL] = self.neutral_team = Team(self._TEAM_NAME_NEUTRAL)
+        self.teams[self._TEAM_ID_NEUTRAL] = self.neutral_team = Team(self._TEAM_ID_NEUTRAL, self)
         self.info = None
 
     def add_player(self, player_name, player_guid):
@@ -22,7 +28,10 @@ class Server(object):
         player_or_none.remove()
 
     def authorize_player(self, player_name, guid):
-        self.get_player(player_name).authorize(guid)
+        player_or_none = self.search_for_player(player_name)
+        if player_or_none is None:
+            return
+        player_or_none.authorize(guid)
 
     def load_info(self, *args):
         print "SERVER INFO:", args # TODO
@@ -35,7 +44,7 @@ class Server(object):
         """ returns Player object or None """
         for team_id in self.teams:
             team = self.teams[team_id]
-            player_or_none = team.get_player(player_name)
+            player_or_none = team.search_for_player(player_name)
             if player_or_none is not None:
                 return player_or_none
         return None
@@ -46,21 +55,34 @@ class Server(object):
     def process_kill(self, killer_name, deadguy_name, weapon, is_headshot):
         pass # TODO
 
+    def get_message_participant_info(self):
+        return self.MESSAGE_PREFIX
 
-class Team(object):
+
+class Team(AbstractMessagesystemParticipant):
+    MESSAGE_PREFIX = PlayerSubsetPrefix.TEAM
+    _MAX_SQUAD = 8
     _SQUAD_ID_NONE = 0
-    _SQUAD_ID_NAME_MAP = {
-            'NONE': 0,
-            'ALHPA': 1,
-            'BRAVO': 2,
-            'CHARLIE': 3,
-            'DELTA': 4,
-            'ECHO': 5,
-            'FOXTROT': 6,
-            'GOLF': 7,
-            'HOTEL': 8,
-            }
-    _SQUAD_NAME_ID_MAP = { # TODO: refactor so it's not copied from above
+    def __init__(self, team_id, server):
+        self.identifier = team_id
+        self.name = "Team %d" % team_id
+        self.server = server
+        self.squads = {}
+        for squad_id in range(self._MAX_SQUAD):
+            self.squads[squad_id] = Squad(self, squad_id)
+        self.no_squad = self.squads[self._SQUAD_ID_NONE]
+
+    def search_for_player(self, player_name):
+        """ returns Player object or None """
+        for squad_id in self.squads:
+            squad = self.squads[squad_id]
+            player_or_none = squad.search_for_player(player_name)
+            if player_or_none is not None:
+                return player_or_none
+        return None
+
+class Squad(AbstractMessagesystemParticipant):
+    _SQUAD_NAME_ID_MAP = {
             0: 'NONE',
             1: 'ALHPA',
             2: 'BRAVO',
@@ -71,26 +93,11 @@ class Team(object):
             7: 'GOLF',
             8: 'HOTEL',
             }
-    def __init__(self, name):
-        self.name = name
-        self.squads = {}
-        for squad_id in self._SQUAD_NAME_ID_MAP.keys():
-            squad_name = self._SQUAD_NAME_ID_MAP[squad_id]
-            self.squads[squad_id] = Squad(squad_name)
-        self.no_squad = self.squads[self._SQUAD_ID_NONE]
-
-    def search_for_player(self, player_name):
-        """ returns Player object or None """
-        for squad_id in self.teams:
-            squad = self.players[squad_id]
-            player_or_none = squad.get_player(player_name)
-            if player_or_none is not None:
-                return player_or_none
-        return None
-
-class Squad(object):
-    def __init__(self, name):
-        self.name = name
+    MESSAGE_PREFIX = PlayerSubsetPrefix.SQUAD
+    def __init__(self, team, squad_id):
+        self.team = team
+        self.identifier = squad_id
+        self.name = self._SQUAD_NAME_ID_MAP[squad_id]
         self.players = []
 
     def add_player(self, player):
@@ -99,6 +106,10 @@ class Squad(object):
     def remove_player(self, player):
         self.players.remove(player)
 
+    @property
+    def server(self):
+        return self.team.server
+
     def search_for_player(self, player_name):
         """ returns Player object or None """
         for player in self.players:
@@ -106,7 +117,11 @@ class Squad(object):
                 return player
         return None
 
-class Player(object):
+    def get_message_participant_info(self):
+        return self.MESSAGE_PREFIX, self.team.identifier, self.identifier
+
+class Player(AbstractMessagesystemParticipant):
+    MESSAGE_PREFIX = PlayerSubsetPrefix.PLAYER
     _MODERATION_LEVEL_MUTED  = 1001
     _MODERATION_LEVEL_NORMAL = 1002
     _MODERATION_LEVEL_VOICE  = 1003
@@ -116,10 +131,15 @@ class Player(object):
         self.guid = player_guid
         self.squad = squad
         self.authenticated = False
+        self.identifier = self.name
 
     @property
     def team(self):
         return self.squad.team
+
+    @property
+    def server(self):
+        return self.squad.team.server
 
     def authenticate(self):
         self.authenticated = True
@@ -133,9 +153,12 @@ class StateAPI(object):
     def connection_made(self):
         self.triggers.pre_connection_made()
         players = yield self.rcon.admin_listPlayers()
-        for player in players:
-            pl = players[player]
-            self.server.add_player(pl['name'], pl['guid'])
+        if players is not None:
+            for player in players:
+                pl = players[player]
+                self.server.add_player(pl['name'], pl['guid'])
+        else:
+            print "after connection was made, admin_listPlayers gave no result" # TODO
         self.triggers.post_connection_made()
         self.server_info_hint()
     def connection_lost(self, reason):

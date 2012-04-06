@@ -4,7 +4,9 @@ from twisted.internet.defer import Deferred
 from twisted.internet.protocol import ReconnectingClientFactory
 from fbrcon import FBRconFactory, FBRconProtocol
 from serverstate.state import StateAPI, Server
+
 from plugins.debug_plugin import DebugPlugin
+from plugins.toy_plugin import ToyPlugin
 
 def getClientRconFactory(params):
     factory = ClientRconFactory(False, params)
@@ -103,7 +105,9 @@ class ClientRconProtocol(FBRconProtocol):
         self.connection_lost_handler = self.stateapi.connection_lost
         self.seq = 1
         self.callbacks = {}
-        self.plugins = DebugPlugin(self.stateapi, self)
+        self.plugins = []
+        self.plugins.append( DebugPlugin(self.stateapi, self) )
+        self.plugins.append( ToyPlugin(self.stateapi, self) )
 
     def _register_handler(self, command, api_handle, len_arguments, processor=None):
         if processor is None:
@@ -159,6 +163,8 @@ class ClientRconProtocol(FBRconProtocol):
     def admin_listPlayers(self):
         raw_structure_with_status = yield self.sendRequest(["admin.listPlayers", "all"])
         #status = raw_structure_with_status[0]
+        if raw_structure_with_status is None:
+            return # TODO: happens, apparetnly. Race condition?
         raw_structure = raw_structure_with_status[1:]
         parsed_structure = self._parse_player_info_block(raw_structure)
         defer.returnValue(parsed_structure)
@@ -179,9 +185,11 @@ class ClientRconProtocol(FBRconProtocol):
     def admin_killPlayer(self, player):
         retval = yield self.sendRequest(["admin.killPlayer", player])
     
-    @defer.inlineCallbacks
-    def admin_say(self, message):
-        retval = yield self.sendRequest(["admin.say", message])
+    def admin_say(self, li_targets, message):
+        for target in li_targets:
+            quantifier = target.MESSAGE_PREFIX
+            name = target.message_identifier
+            self.sendRequest(["admin.say", message, quantifier, name])
     
     # Unhandled event: IsFromServer, Request, Sequence: 132, Words: "server.onLevelLoaded" "MP_007" "ConquestLarge0" "0" "2"
     def server_onLevelLoaded(self, packet): 
@@ -215,6 +223,14 @@ class ClientRconProtocol(FBRconProtocol):
         # TODO: this needs to add items to a cache so we can fire the deferred later
         #       we should probably also track command rtt
         cb = Deferred()
+
+        # TODO: remove debug:
+        print "sending", strings
+        if not strings[0].startswith('login'):
+            def printer(response):
+                print """response = %s""" % response
+            cb.addCallback(printer)
+
         seq = self.peekSeq()
         self.callbacks[seq] = cb
         self.transport.write(self.EncodeClientRequest(strings))

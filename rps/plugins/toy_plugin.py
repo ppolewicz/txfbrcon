@@ -1,7 +1,7 @@
 from serverstate.triggersystem import TriggerType
 from abstractplugin import AbstractPlugin
 
-class DebugPlugin(AbstractPlugin):
+class ToyPlugin(AbstractPlugin):
     def __init__(self, state, rcon):
         self.triggertype_trigger = [
                 (TriggerType.PRE_CONNECTION_MADE, self.pre_connection_made),
@@ -41,9 +41,9 @@ class DebugPlugin(AbstractPlugin):
                 (TriggerType.PRE_SERVER_ROUND_OVER_TEAMDATA, self.pre_server_round_over_teamdata),
                 (TriggerType.POST_SERVER_ROUND_OVER_TEAMDATA, self.post_server_round_over_teamdata),
                 ]
-        super(DebugPlugin, self).__init__(state, rcon)
+        super(ToyPlugin, self).__init__(state, rcon)
     def log(self, message):
-        print "[%s] %s" % (self.__class__.__name__, message)
+        pass
     def pre_connection_made(self):
         self.log("""pre_connection_made()""")
     def post_connection_made(self):
@@ -127,10 +127,9 @@ class DebugPlugin(AbstractPlugin):
     is_headshot = %(is_headshot)s
 )""" % locals())
     def pre_player_chat(self, player_name, message):
-        self.log("""pre_player_chat(
-    player_name = %(player_name)s
-    message = %(message)s
-)""" % locals())
+        player = self.state.server.search_for_player(player_name)
+        if player is not None:
+            rsay = self.rcon.admin_say(player, "echo: %s" % message)
     def post_player_chat(self, player_name, message):
         self.log("""post_player_chat(
     player_name = %(player_name)s
