@@ -43,8 +43,29 @@ class ToyPlugin(AbstractPlugin):
     def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot):
         pass
     def post_player_chat(self, player_name, message):
-        if message == "!killme":
-            self.rcon.admin_killPlayer(player_name)
+        player = self.state.server.search_for_player(player_name) # TODO
+        if player is None:
+            return
+        words = message.split()
+        if len(words)<1:
+            return
+        command = words[0]
+
+        if command == '!killme':
+            self.rcon.admin_killPlayer(player.name)
+        elif command == 'test':
+            duration = 7
+            self.rcon.admin_yell([player], "A\t quite\n long test message", duration)
+
+        if len(words)<2:
+            return
+        arguments = words[1:]
+        message = " ".join(arguments)
+        if command == '!say':
+            self.rcon.admin_say([player], message)
+        elif command == '!yell':
+            duration = 7
+            self.rcon.admin_yell([player], message, duration)
     def post_player_team_changed(self, player_name, team_id, squad_id):
         pass
     def post_player_squad_changed(self, player_name, team_id, squad_id):

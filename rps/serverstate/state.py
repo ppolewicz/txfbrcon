@@ -19,7 +19,9 @@ class Server(AbstractMessagesystemParticipant):
 
     def add_player(self, player_name, player_guid):
         squad = self.neutral_team.no_squad
-        return Player(player_name, player_guid, squad)
+        p = Player(player_name, player_guid, squad)
+        squad.add_player(p)
+        return p
 
     def remove_player(self, player_name):
         player_or_none = self.search_for_player(player_name)
@@ -113,7 +115,7 @@ class Squad(AbstractMessagesystemParticipant):
     def search_for_player(self, player_name):
         """ returns Player object or None """
         for player in self.players:
-            if player.name == player_name:
+            if player.matches(player_name):
                 return player
         return None
 
@@ -143,6 +145,9 @@ class Player(AbstractMessagesystemParticipant):
 
     def authenticate(self):
         self.authenticated = True
+
+    def matches(self, player_name):
+        return self.name == player_name
 
 class StateAPI(object):
     def __init__(self, server, rcon):

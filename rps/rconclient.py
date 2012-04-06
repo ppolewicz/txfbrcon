@@ -191,17 +191,16 @@ class ClientRconProtocol(FBRconProtocol):
 
     @classmethod
     def _target_to_player_subset(cls, target):
-        quantifier = target.MESSAGE_PREFIX
-        name = target.message_identifier
-        return '%s %s' % (quantifier, name)
+        quantifier, identifier = target.get_message_participant_info()
+        return (quantifier, identifier)
 
     def _send_message(self, command, li_targets, *args):
         """ args ex.: [message] or [message, duration] """
         for target in li_targets:
             subset = self._target_to_player_subset(target)
             request = [command]
-            request.update(args)
-            request.append(subset)
+            request.extend(args)
+            request.extend(subset)
             self.sendRequest(request)
 
     # Unhandled event: IsFromServer, Request, Sequence: 132, Words: "server.onLevelLoaded" "MP_007" "ConquestLarge0" "0" "2"
