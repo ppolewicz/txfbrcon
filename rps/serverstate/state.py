@@ -201,9 +201,13 @@ class StateAPI(object):
         self.server.process_kill(killer_name, deadguy_name, weapon, is_headshot)
         self.triggers.post_player_killed(killer_name, deadguy_name, weapon, is_headshot)
     def player_chat(self, player_name, message): # target_player_subset is documented argument... but the server doesn't send it
-        self.triggers.pre_player_chat(player_name, message)
+        if player_name == 'Server':
+            pass # TODO: special trigger
+            return
+        player = self.server.search_for_player(player_name)
+        self.triggers.pre_player_chat(player, message)
         pass
-        self.triggers.post_player_chat(player_name, message)
+        self.triggers.post_player_chat(player, message)
     def player_team_changed(self, player_name, team_id, squad_id):
         self.triggers.pre_player_team_changed(player_name, team_id, squad_id)
         pass

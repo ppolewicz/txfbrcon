@@ -42,8 +42,7 @@ class ToyPlugin(AbstractPlugin):
         pass
     def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot):
         pass
-    def post_player_chat(self, player_name, message):
-        player = self.state.server.search_for_player(player_name) # TODO
+    def post_player_chat(self, player, message):
         if player is None:
             return
         words = message.split()

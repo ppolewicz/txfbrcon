@@ -124,16 +124,16 @@ class DebugPlugin(AbstractPlugin):
     weapon = %(weapon)s
     is_headshot = %(is_headshot)s
 )""" % locals())
-    def pre_player_chat(self, player_name, message):
+    def pre_player_chat(self, player, message):
         self.log("""pre_player_chat(
-    player_name = %(player_name)s
+    player.name = %(playername)s
     message = %(message)s
-)""" % locals())
-    def post_player_chat(self, player_name, message):
-        self.log("""post_player_chat(
-    player_name = %(player_name)s
+)""" % {'message': message, 'playername': player.name})
+    def post_player_chat(self, player, message):
+        self.log("""pre_player_chat(
+    player.name = %(playername)s
     message = %(message)s
-)""" % locals())
+)""" % {'message': message, 'playername': player.name})
     def pre_player_team_changed(self, player_name, team_id, squad_id):
         self.log("""pre_player_team_changed(
     player_name = %(player_name)s
