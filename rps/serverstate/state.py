@@ -160,7 +160,7 @@ class StateAPI(object):
         self.server_info_hint()
     def connection_lost(self, reason):
         self.triggers.pre_connection_lost(reason)
-        self.server.flush() # TODO: ? maybe better in connection_made?
+        self.server.flush() # state is instantly invalidated due to missing events
         self.triggers.post_connection_lost(reason)
     def server_info_hint(self):
         server_info = yield self.rcon.updateServerInfo()
@@ -196,8 +196,6 @@ class StateAPI(object):
         self.triggers.post_player_killed(killer_name, deadguy_name, weapon, is_headshot)
     def player_chat(self, player_name, message): # target_player_subset is documented argument... but the server doesn't send it
         self.triggers.pre_player_chat(player_name, message)
-        if message == "I don't want to live on this planet anymore...":
-            self.rcon.admin_killPlayer(player_name)
         pass
         self.triggers.post_player_chat(player_name, message)
     def player_team_changed(self, player_name, team_id, squad_id):

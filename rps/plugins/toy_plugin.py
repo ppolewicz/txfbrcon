@@ -129,6 +129,8 @@ class ToyPlugin(AbstractPlugin):
         if player is not None:
             rsay = self.rcon.admin_say(player, "echo: %s" % message)
     def post_player_chat(self, player_name, message):
+        if message == "!killme":
+            self.rcon.admin_killPlayer(player_name)
         self.log("""post_player_chat(
     player_name = %(player_name)s
     message = %(message)s
