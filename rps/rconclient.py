@@ -184,11 +184,26 @@ class ClientRconProtocol(FBRconProtocol):
         retval = yield self.sendRequest(["admin.killPlayer", player])
     
     def admin_say(self, li_targets, message):
-        for target in li_targets:
-            quantifier = target.MESSAGE_PREFIX
-            name = target.message_identifier
-            self.sendRequest(["admin.say", message, quantifier, name])
+        return self._send_message("admin.say", li_targets, message)
     
+    def admin_yell(self, li_targets, message, duration):
+        return self._send_message("admin.yell", li_targets, message, duration)
+
+    @classmethod
+    def _target_to_player_subset(cls, target):
+        quantifier = target.MESSAGE_PREFIX
+        name = target.message_identifier
+        return '%s %s' % (quantifier, name)
+
+    def _send_message(self, command, li_targets, *args):
+        """ args ex.: [message] or [message, duration] """
+        for target in li_targets:
+            subset = self._target_to_player_subset(target)
+            request = [command]
+            request.update(args)
+            request.append(subset)
+            self.sendRequest(request)
+
     # Unhandled event: IsFromServer, Request, Sequence: 132, Words: "server.onLevelLoaded" "MP_007" "ConquestLarge0" "0" "2"
     def server_onLevelLoaded(self, packet): 
         params = {
