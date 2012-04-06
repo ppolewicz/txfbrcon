@@ -186,11 +186,12 @@ class StateAPI(object):
         self.triggers.post_player_kicked(player_name, kick_reason)
     def player_authenticated(self, player_name):
         player = self.server.search_for_player(player_name)
-        if player is not None:
+        if player is None:
             print "AUTHENTICATION ERROR: PLAYER '%s' DOES NOT EXIST BUT IS AUTHENTICATED" % player_name # TODO
-            self.triggers.pre_player_authenticated(player_name)
-            player.authenticate()
-            self.triggers.post_player_authenticated(player_name)
+            return
+        self.triggers.pre_player_authenticated(player_name)
+        player.authenticate()
+        self.triggers.post_player_authenticated(player_name)
     def player_spawned(self, player_name, team_id):
         self.triggers.pre_player_spawned(player_name, team_id)
         self.server.process_spawn(player_name, team_id)
