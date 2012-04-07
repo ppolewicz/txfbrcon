@@ -30,17 +30,17 @@ class ToyPlugin(AbstractPlugin):
         pass
     def post_server_info(self, *args): # TODO
         pass
-    def post_player_joined(self, player_name, player_guid):
+    def post_player_joined(self, player, player_guid):
         pass
-    def post_player_left(self, player_name, player_info_block):
+    def post_player_left(self, player, player_info_block):
         pass
-    def post_player_kicked(self, player_name, kick_reason):
+    def post_player_kicked(self, player, kick_reason):
         pass
-    def post_player_authenticated(self, player_name):
+    def post_player_authenticated(self, player):
         pass
-    def post_player_spawned(self, player_name, team_id):
+    def post_player_spawned(self, player, team_id):
         pass
-    def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot):
+    def post_player_killed(self, killer, deadguy, weapon, is_headshot):
         pass
     def post_player_chat(self, player, message):
         if player is None:
@@ -65,9 +65,9 @@ class ToyPlugin(AbstractPlugin):
         elif command == '!yell':
             duration = 7
             self.rcon.admin_yell([player], message, duration)
-    def post_player_team_changed(self, player_name, team_id, squad_id):
+    def post_player_team_changed(self, player, team_id, squad_id):
         pass
-    def post_player_squad_changed(self, player_name, team_id, squad_id):
+    def post_player_squad_changed(self, player, team_id, squad_id):
         pass
     def post_pb_message(self, message):
         pass

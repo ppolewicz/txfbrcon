@@ -51,10 +51,10 @@ class Server(AbstractMessagesystemParticipant):
                 return player_or_none
         return None
 
-    def process_spawn(self, player_name, team_id):
+    def process_spawn(self, player, team_id):
         pass # TODO
 
-    def process_kill(self, killer_name, deadguy_name, weapon, is_headshot):
+    def process_kill(self, killer, deadguy, weapon, is_headshot):
         pass # TODO
 
     def get_message_participant_info(self):
@@ -149,6 +149,16 @@ class Player(AbstractMessagesystemParticipant):
     def matches(self, player_name):
         return self.name == player_name
 
+    def is_normal(self): # IDeathCause
+        return True
+
+class DeathCause(object):
+    def __init__(self, type_):
+        self.description = type_ # TODO: nice dictionary of death reasons
+
+    def is_normal(self): # IDeathCause
+        return False
+
 class StateAPI(object):
     def __init__(self, server, rcon):
         self.triggers = TriggerSystem()
@@ -173,33 +183,39 @@ class StateAPI(object):
         self.server.load_info(server_info)
         self.triggers.post_server_info(server_info)
     def player_joined(self, player_name, player_guid):
-        self.triggers.pre_player_joined(player_name, player_guid)
-        self.server.add_player(player_name, player_guid)
-        self.triggers.post_player_joined(player_name, player_guid)
+        player = self.server.search_for_player(player_name)
+        self.triggers.pre_player_joined(player, player_guid)
+        self.server.add_player(player, player_guid)
+        self.triggers.post_player_joined(player, player_guid)
     def player_left(self, player_name, player_info_block):
-        self.triggers.pre_player_left(player_name, player_info_block)
-        self.server.remove_player(player_name)
-        self.triggers.post_player_left(player_name, player_info_block)
+        player = self.server.search_for_player(player_name)
+        self.triggers.pre_player_left(player, player_info_block)
+        self.server.remove_player(player)
+        self.triggers.post_player_left(player, player_info_block)
     def player_kicked(self, player_name, kick_reason):
-        self.triggers.pre_player_kicked(player_name, kick_reason)
-        self.server.remove_player(player_name)
-        self.triggers.post_player_kicked(player_name, kick_reason)
+        player = self.server.search_for_player(player_name)
+        self.triggers.pre_player_kicked(player, kick_reason)
+        self.server.remove_player(player)
+        self.triggers.post_player_kicked(player, kick_reason)
     def player_authenticated(self, player_name):
         player = self.server.search_for_player(player_name)
         if player is None:
             print "AUTHENTICATION ERROR: PLAYER '%s' DOES NOT EXIST BUT IS AUTHENTICATED" % player_name # TODO
             return
-        self.triggers.pre_player_authenticated(player_name)
+        self.triggers.pre_player_authenticated(player)
         player.authenticate()
-        self.triggers.post_player_authenticated(player_name)
+        self.triggers.post_player_authenticated(player)
     def player_spawned(self, player_name, team_id):
-        self.triggers.pre_player_spawned(player_name, team_id)
-        self.server.process_spawn(player_name, team_id)
-        self.triggers.post_player_spawned(player_name, team_id)
+        player = self.server.search_for_player(player_name)
+        self.triggers.pre_player_spawned(player, team_id)
+        self.server.process_spawn(player, team_id)
+        self.triggers.post_player_spawned(player, team_id)
     def player_killed(self, killer_name, deadguy_name, weapon, is_headshot):
-        self.triggers.pre_player_killed(killer_name, deadguy_name, weapon, is_headshot)
-        self.server.process_kill(killer_name, deadguy_name, weapon, is_headshot)
-        self.triggers.post_player_killed(killer_name, deadguy_name, weapon, is_headshot)
+        killer = self.server.search_for_player(killer_name) or DeathCause(killer_name)
+        deadguy = self.server.search_for_player(deadguy_name) or DeathCause(deadguy_name)
+        self.triggers.pre_player_killed(killer, deadguy, weapon, is_headshot)
+        self.server.process_kill(killer, deadguy, weapon, is_headshot)
+        self.triggers.post_player_killed(killer, deadguy, weapon, is_headshot)
     def player_chat(self, player_name, message): # target_player_subset is documented argument... but the server doesn't send it
         if player_name == 'Server':
             pass # TODO: special trigger
@@ -209,13 +225,15 @@ class StateAPI(object):
         pass
         self.triggers.post_player_chat(player, message)
     def player_team_changed(self, player_name, team_id, squad_id):
-        self.triggers.pre_player_team_changed(player_name, team_id, squad_id)
+        player = self.server.search_for_player(player_name)
+        self.triggers.pre_player_team_changed(player, team_id, squad_id)
         pass
-        self.triggers.post_player_team_changed(player_name, team_id, squad_id)
+        self.triggers.post_player_team_changed(player, team_id, squad_id)
     def player_squad_changed(self, player_name, team_id, squad_id):
-        self.triggers.pre_player_squad_changed(player_name, team_id, squad_id)
+        player = self.server.search_for_player(player_name)
+        self.triggers.pre_player_squad_changed(player, team_id, squad_id)
         pass
-        self.triggers.post_player_squad_changed(player_name, team_id, squad_id)
+        self.triggers.post_player_squad_changed(player, team_id, squad_id)
     def pb_message(self, message):
         self.triggers.pre_pb_message(message)
         pass

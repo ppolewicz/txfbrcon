@@ -62,65 +62,79 @@ class DebugPlugin(AbstractPlugin):
         self.log("""post_server_info(
     args = %(args)s
 )""" % locals())
-    def pre_player_joined(self, player_name, player_guid):
+    def pre_player_joined(self, player, player_guid):
+        player_name = player.name
         self.log("""pre_player_joined(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     player_guid = %(player_guid)s
 )""" % locals())
-    def post_player_joined(self, player_name, player_guid):
+    def post_player_joined(self, player, player_guid):
+        player_name = player.name
         self.log("""post_player_joined(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     player_guid = %(player_guid)s
 )""" % locals())
-    def pre_player_left(self, player_name, player_info_block):
+    def pre_player_left(self, player, player_info_block):
+        player_name = player.name
         self.log("""pre_player_left(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     player_info_block = %(player_info_block)s
 )""" % locals())
-    def post_player_left(self, player_name, player_info_block):
+    def post_player_left(self, player, player_info_block):
+        player_name = player.name
         self.log("""post_player_left(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     player_info_block = %(player_info_block)s
 )""" % locals())
-    def pre_player_kicked(self, player_name, kick_reason):
+    def pre_player_kicked(self, player, kick_reason):
+        player_name = player.name
         self.log("""pre_player_kicked(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     kick_reason = %(kick_reason)s
 )""" % locals())
-    def post_player_kicked(self, player_name, kick_reason):
+    def post_player_kicked(self, player, kick_reason):
+        player_name = player.name
         self.log("""post_player_kicked(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     kick_reason = %(kick_reason)s
 )""" % locals())
-    def pre_player_authenticated(self, player_name):
+    def pre_player_authenticated(self, player):
+        player_name = player.name
         self.log("""pre_player_authenticated(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
 )""" % locals())
-    def post_player_authenticated(self, player_name):
+    def post_player_authenticated(self, player):
+        player_name = player.name
         self.log("""post_player_authenticated(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
 )""" % locals())
-    def pre_player_spawned(self, player_name, team_id):
+    def pre_player_spawned(self, player, team_id):
+        player_name = player.name
         self.log("""pre_player_spawned(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     team_id = %(team_id)s
 )""" % locals())
-    def post_player_spawned(self, player_name, team_id):
+    def post_player_spawned(self, player, team_id):
+        player_name = player.name
         self.log("""post_player_spawned(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     team_id = %(team_id)s
 )""" % locals())
-    def pre_player_killed(self, killer_name, deadguy_name, weapon, is_headshot):
+    def pre_player_killed(self, killer, deadguy, weapon, is_headshot):
+        killer_name = killer.is_normal() and killer.name or killer.description
+        deadguy_name = deadguy.name
         self.log("""pre_player_killed(
-    killer_name = %(killer_name)s
-    deadguy_name = %(deadguy_name)s
+    killer = %(killer_name)s
+    deadguy = %(deadguy_name)s
     weapon = %(weapon)s
     is_headshot = %(is_headshot)s
 )""" % locals())
-    def post_player_killed(self, killer_name, deadguy_name, weapon, is_headshot):
+    def post_player_killed(self, killer, deadguy, weapon, is_headshot):
+        killer_name = killer.is_normal() and killer.name or killer.description
+        deadguy_name = deadguy.name
         self.log("""post_player_killed(
-    killer_name = %(killer_name)s
-    deadguy_name = %(deadguy_name)s
+    killer = %(killer_name)s
+    deadguy = %(deadguy_name)s
     weapon = %(weapon)s
     is_headshot = %(is_headshot)s
 )""" % locals())
@@ -134,27 +148,31 @@ class DebugPlugin(AbstractPlugin):
     player.name = %(playername)s
     message = %(message)s
 )""" % {'message': message, 'playername': player.name})
-    def pre_player_team_changed(self, player_name, team_id, squad_id):
+    def pre_player_team_changed(self, player, team_id, squad_id):
+        player_name = player.name
         self.log("""pre_player_team_changed(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     team_id = %(team_id)s
     squad_id = %(squad_id)s
 )""" % locals())
-    def post_player_team_changed(self, player_name, team_id, squad_id):
+    def post_player_team_changed(self, player, team_id, squad_id):
+        player_name = player.name
         self.log("""post_player_team_changed(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     team_id = %(team_id)s
     squad_id = %(squad_id)s
 )""" % locals())
-    def pre_player_squad_changed(self, player_name, team_id, squad_id):
+    def pre_player_squad_changed(self, player, team_id, squad_id):
+        player_name = player.name
         self.log("""pre_player_squad_changed(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     team_id = %(team_id)s
     squad_id = %(squad_id)s
 )""" % locals())
-    def post_player_squad_changed(self, player_name, team_id, squad_id):
+    def post_player_squad_changed(self, player, team_id, squad_id):
+        player_name = player.name
         self.log("""post_player_squad_changed(
-    player_name = %(player_name)s
+    player.name = %(player_name)s
     team_id = %(team_id)s
     squad_id = %(squad_id)s
 )""" % locals())
